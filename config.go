@@ -8,8 +8,9 @@ import (
 const configPath string = "config.json"
 
 type config struct {
-	BotToken string            `json:"botToken"`
-	Commands map[string]string `json:"commands"`
+	BotToken  string            `json:"botToken"`
+	WhiteList []string          `json:"whiteList"`
+	Commands  map[string]string `json:"commands"`
 }
 
 func loadConfig() (*config, error) {

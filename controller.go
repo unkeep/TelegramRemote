@@ -40,6 +40,11 @@ func (c *controller) start() {
 }
 
 func (c *controller) handleUpdate(update tgbotapi.Update) {
+	if !c.isAuthorizedUser(update.Message.From.UserName) {
+		c.reply(update.Message, "Sorry, you are not authorized")
+		return
+	}
+
 	var commandStr string
 	if update.Message.Text[0] == '/' {
 		v, ok := c.cfg.Commands[update.Message.Text]
@@ -70,4 +75,14 @@ func (c *controller) handleUpdate(update tgbotapi.Update) {
 
 func (c *controller) reply(toMsg *tgbotapi.Message, text string) {
 	c.bot.Send(tgbotapi.NewMessage(toMsg.Chat.ID, text))
+}
+
+func (c *controller) isAuthorizedUser(user string) bool {
+	for _, u := range c.cfg.WhiteList {
+		if u == user {
+			return true
+		}
+	}
+
+	return false
 }
