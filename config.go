@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-const configPath string = "config.json"
+const defaultConfigPath string = "config.json"
 
 type config struct {
 	BotToken  string            `json:"botToken"`
@@ -14,7 +14,13 @@ type config struct {
 }
 
 func loadConfig() (*config, error) {
-	configFile, err := os.Open(configPath)
+	path := defaultConfigPath
+	appArgs := os.Args
+	if len(appArgs) > 1 {
+		path = os.Args[1]
+	}
+
+	configFile, err := os.Open(path)
 	defer configFile.Close()
 	if err != nil {
 		return nil, err
