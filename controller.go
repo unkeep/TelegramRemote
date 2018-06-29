@@ -55,7 +55,7 @@ func (c *controller) handleUpdate(update tgbotapi.Update) {
 	if update.Message.Text[0] == '/' {
 		v, ok := c.cfg.Commands[update.Message.Text]
 		if !ok {
-			c.reply(update.Message, "unsupported command")
+			c.reply(update.Message, "Unsupported command")
 			return
 		}
 		commandStr = v
@@ -63,7 +63,7 @@ func (c *controller) handleUpdate(update tgbotapi.Update) {
 		commandStr = update.Message.Text
 	}
 
-	log.Print(commandStr)
+	log.Printf("executing '%s'", commandStr)
 
 	words := strings.Split(commandStr, " ")
 	cmd := exec.Command(words[0], words[1:]...)
