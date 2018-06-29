@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"log"
 	"os/exec"
 	"strings"
@@ -45,6 +46,11 @@ func (c *controller) handleUpdate(update tgbotapi.Update) {
 		return
 	}
 
+	if update.Message.Text == "/help" {
+		c.replyToHelp(update.Message)
+		return
+	}
+
 	var commandStr string
 	if update.Message.Text[0] == '/' {
 		v, ok := c.cfg.Commands[update.Message.Text]
@@ -74,7 +80,9 @@ func (c *controller) handleUpdate(update tgbotapi.Update) {
 }
 
 func (c *controller) reply(toMsg *tgbotapi.Message, text string) {
-	c.bot.Send(tgbotapi.NewMessage(toMsg.Chat.ID, text))
+	mConf := tgbotapi.NewMessage(toMsg.Chat.ID, text)
+	mConf.ParseMode = tgbotapi.ModeHTML
+	c.bot.Send(mConf)
 }
 
 func (c *controller) isAuthorizedUser(user string) bool {
@@ -85,4 +93,13 @@ func (c *controller) isAuthorizedUser(user string) bool {
 	}
 
 	return false
+}
+
+func (c *controller) replyToHelp(toMsg *tgbotapi.Message) {
+	var lines []string
+	for name, script := range c.cfg.Commands {
+		lines = append(lines, fmt.Sprintf("%s - <i>%s</i>", name, script))
+	}
+
+	c.reply(toMsg, strings.Join(lines, "\n"))
 }
