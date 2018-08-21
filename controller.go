@@ -31,18 +31,18 @@ func createController(bot *tgbotapi.BotAPI, c *config) (*controller, error) {
 
 func (c *controller) start() {
 	log.Println("Handling chat updates...")
-
-	for {
-		select {
-		case update := <-c.botUpdates:
-			c.handleUpdate(update)
-		}
+	for update := range c.botUpdates {
+		c.handleUpdate(update)
 	}
 }
 
 func (c *controller) handleUpdate(update tgbotapi.Update) {
+	if update.Message == nil {
+		return
+	}
+
 	if !c.isAuthorizedUser(update.Message.From.UserName) {
-		c.reply(update.Message, "Sorry, you are not authorized")
+		c.replyWithText(update.Message, "Sorry, you are not authorized")
 		return
 	}
 
@@ -51,11 +51,17 @@ func (c *controller) handleUpdate(update tgbotapi.Update) {
 		return
 	}
 
+	if strings.HasPrefix(update.Message.Text, "/file ") {
+		path := strings.TrimPrefix(update.Message.Text, "/file ")
+		c.replyWithFile(update.Message, path)
+		return
+	}
+
 	var commandStr string
 	if update.Message.Text[0] == '/' {
 		v, ok := c.cfg.Commands[update.Message.Text]
 		if !ok {
-			c.reply(update.Message, "Unsupported command")
+			c.replyWithText(update.Message, "Unsupported command")
 			return
 		}
 		commandStr = v
@@ -73,15 +79,20 @@ func (c *controller) handleUpdate(update tgbotapi.Update) {
 	err := cmd.Run()
 
 	if err != nil {
-		c.reply(update.Message, err.Error())
+		c.replyWithText(update.Message, err.Error())
 	} else {
-		c.reply(update.Message, out.String())
+		c.replyWithText(update.Message, out.String())
 	}
 }
 
-func (c *controller) reply(toMsg *tgbotapi.Message, text string) {
+func (c *controller) replyWithText(toMsg *tgbotapi.Message, text string) {
 	mConf := tgbotapi.NewMessage(toMsg.Chat.ID, text)
 	mConf.ParseMode = tgbotapi.ModeHTML
+	c.bot.Send(mConf)
+}
+
+func (c *controller) replyWithFile(toMsg *tgbotapi.Message, path string) {
+	mConf := tgbotapi.NewDocumentUpload(toMsg.Chat.ID, path)
 	c.bot.Send(mConf)
 }
 
@@ -101,5 +112,5 @@ func (c *controller) replyToHelp(toMsg *tgbotapi.Message) {
 		lines = append(lines, fmt.Sprintf("%s - <i>%s</i>", name, script))
 	}
 
-	c.reply(toMsg, strings.Join(lines, "\n"))
+	c.replyWithText(toMsg, strings.Join(lines, "\n"))
 }
