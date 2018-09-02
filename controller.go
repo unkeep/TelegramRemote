@@ -70,10 +70,10 @@ func (c *controller) handleUpdate(update tgbotapi.Update) {
 	}
 
 	log.Printf("executing '%s'", commandStr)
+	c.sendTypingAction(update.Message.Chat.ID)
 
 	words := strings.Split(commandStr, " ")
 	cmd := exec.Command(words[0], words[1:]...)
-	// cmd.Stdin = strings.NewReader("some input")
 	var out bytes.Buffer
 	cmd.Stdout = &out
 	err := cmd.Run()
@@ -81,19 +81,39 @@ func (c *controller) handleUpdate(update tgbotapi.Update) {
 	if err != nil {
 		c.replyWithText(update.Message, err.Error())
 	} else {
+		log.Println("Out:", out.String())
 		c.replyWithText(update.Message, out.String())
+	}
+}
+
+func (c *controller) sendTypingAction(chatID int64) {
+	mConf := tgbotapi.NewChatAction(chatID, tgbotapi.ChatTyping)
+	if _, err := c.bot.Send(mConf); err != nil {
+		log.Println("sendTypingAction err:", err.Error())
 	}
 }
 
 func (c *controller) replyWithText(toMsg *tgbotapi.Message, text string) {
 	mConf := tgbotapi.NewMessage(toMsg.Chat.ID, text)
+	if _, err := c.bot.Send(mConf); err != nil {
+		log.Println("replyWithText err:", err.Error())
+	}
+}
+
+func (c *controller) replyWithHTML(toMsg *tgbotapi.Message, html string) {
+	mConf := tgbotapi.NewMessage(toMsg.Chat.ID, html)
 	mConf.ParseMode = tgbotapi.ModeHTML
-	c.bot.Send(mConf)
+	if _, err := c.bot.Send(mConf); err != nil {
+		log.Println("replyWithHTML err:", err.Error())
+	}
 }
 
 func (c *controller) replyWithFile(toMsg *tgbotapi.Message, path string) {
 	mConf := tgbotapi.NewDocumentUpload(toMsg.Chat.ID, path)
 	c.bot.Send(mConf)
+	if _, err := c.bot.Send(mConf); err != nil {
+		log.Println("replyWithFile err:", err.Error())
+	}
 }
 
 func (c *controller) isAuthorizedUser(user string) bool {
@@ -117,5 +137,5 @@ func (c *controller) replyToHelp(toMsg *tgbotapi.Message) {
 		fmt.Fprintf(buffer, "%s - <i>%s</i>\n", name, script)
 	}
 
-	c.replyWithText(toMsg, buffer.String())
+	c.replyWithHTML(toMsg, buffer.String())
 }
