@@ -1,1 +1,4 @@
-TelegramRemote.exe
+*.exe
+debug
+.vscode/*
+config.json
