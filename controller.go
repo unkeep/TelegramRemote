@@ -171,8 +171,18 @@ func (c *controller) killHandler(update tgbotapi.Update) bool {
 func (c *controller) cmdHandler(update tgbotapi.Update) bool {
 	var commandStr string
 	if strings.HasPrefix(update.Message.Text, "/") {
-		if userCommand, ok := c.cfg.Commands[update.Message.Text]; ok {
-			commandStr = userCommand
+		var cmdKey string
+		var cmdArgs string
+		spacePos := strings.IndexByte(update.Message.Text, ' ')
+		if spacePos == -1 {
+			cmdKey = update.Message.Text
+		} else {
+			cmdKey = update.Message.Text[:spacePos]
+			cmdArgs = update.Message.Text[spacePos:]
+		}
+
+		if userCommand, ok := c.cfg.Commands[cmdKey]; ok {
+			commandStr = userCommand + cmdArgs
 		} else {
 			return false
 		}
